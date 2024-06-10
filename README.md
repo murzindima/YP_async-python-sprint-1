@@ -9,7 +9,10 @@
 <details>
 <summary> Описание </summary>
 
-Список городов находится в переменной `CITIES` в файле [utils.py](utils.py). Для взаимодействия с API используйте готовый класс `YandexWeatherAPI` в модуле `external/client.py`. Пример работы с классом `YandexWeatherAPI` описан в <a href="#apiusingexample">примере</a>. Пример ответа от API для анализа вы найдёте в [файле](examples/response.json).
+Список городов находится в переменной `CITIES` в файле [utils.py](utils.py). 
+Для взаимодействия с API используйте готовый класс `YandexWeatherAPI` в модуле `external/client.py`. 
+Пример работы с классом `YandexWeatherAPI` описан в <a href="#apiusingexample">примере</a>. 
+Пример ответа от API для анализа вы найдёте в [файле](examples/response.json).
 
 </details>
 
