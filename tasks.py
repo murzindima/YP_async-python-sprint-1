@@ -113,19 +113,15 @@ class DataAnalyzingTask:
         self.aggregated_data = aggregated_data
 
     def run(self) -> list[dict[str, any]]:
-        sorted_by_temp = sorted(self.aggregated_data, key=lambda x: x["avg_temp"], reverse=True)
-        sorted_by_precipitation = sorted(self.aggregated_data, key=lambda x: x["no_precipitation_hours"], reverse=True)
+        max_temp = max(self.aggregated_data, key=lambda x: x["avg_temp"])["avg_temp"]
+        max_no_precipitation_hours = max(self.aggregated_data, key=lambda x: x["no_precipitation_hours"])[
+            "no_precipitation_hours"]
 
-        for rank, city in enumerate(sorted_by_temp):
-            city["temp_rank"] = rank + 1
-        for rank, city in enumerate(sorted_by_precipitation):
-            city["precipitation_rank"] = rank + 1
+        best_cities = [city for city in self.aggregated_data if
+                       city["avg_temp"] == max_temp and city["no_precipitation_hours"] == max_no_precipitation_hours]
 
-        best_cities = sorted(self.aggregated_data, key=lambda x: (x["temp_rank"], x["precipitation_rank"]))
         for rank, city in enumerate(best_cities):
             city["rank"] = rank + 1
-
-        best_cities = [city for city in best_cities if city["rank"] == 1]
 
         for city in self.aggregated_data:
             city.pop("temp_rank", None)
@@ -133,4 +129,3 @@ class DataAnalyzingTask:
 
         logger.debug(f"Best cities: {best_cities}")
         return best_cities
-
