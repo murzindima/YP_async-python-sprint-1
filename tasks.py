@@ -122,17 +122,10 @@ class DataAnalyzingTask:
             if city["avg_temp"] == max_avg_temp and city["no_precipitation_hours"] == max_no_precipitation_hours
         ]
 
-        # If no city meets both criteria, select cities with max avg_temp or max_no_precipitation_hours
-        if not best_cities:
-            cities_with_max_temp = [city for city in self.aggregated_data if city["avg_temp"] == max_avg_temp]
-            cities_with_max_no_precipitation = [city for city in self.aggregated_data if
-                                                city["no_precipitation_hours"] == max_no_precipitation_hours]
-            best_cities = cities_with_max_temp + [city for city in cities_with_max_no_precipitation if
-                                                  city not in cities_with_max_temp]
-
         for rank, city in enumerate(best_cities):
             city["rank"] = rank + 1
 
         logger.debug(f"Best cities: {best_cities}")
         return best_cities
+
 
