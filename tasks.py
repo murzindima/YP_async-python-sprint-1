@@ -1,11 +1,8 @@
 import logging
-from concurrent.futures import ThreadPoolExecutor,ProcessPoolExecutor, as_completed
-
-from config import configure_logging
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
 from external.client import YandexWeatherAPI
-#from utils import get_url_by_city_name
+from utils import get_url_by_city_name
 
-configure_logging()
 logger = logging.getLogger(__name__)
 
 
@@ -13,7 +10,8 @@ class DataFetchingTask:
     def __init__(self, cities: dict[str, str]):
         self.cities = cities
 
-    def fetch_weather_data(self, city: str, url: str) -> dict[str, any]:
+    def fetch_weather_data(self, city: str) -> dict[str, any]:
+        url = get_url_by_city_name(city)
         try:
             data = YandexWeatherAPI.get_forecasting(url)
             logger.debug(f"Fetched data for {city}: {data}")
@@ -24,7 +22,7 @@ class DataFetchingTask:
 
     def run(self) -> dict[str, dict[str, any]]:
         with ThreadPoolExecutor() as executor:
-            future_to_city = {executor.submit(self.fetch_weather_data, city, url): city for city, url in self.cities.items()}
+            future_to_city = {executor.submit(self.fetch_weather_data, city): city for city in self.cities.keys()}
             weather_data = {}
             for future in as_completed(future_to_city):
                 city = future_to_city[future]
@@ -42,28 +40,33 @@ class DataCalculationTask:
     def __init__(self, weather_data: dict[str, dict[str, any]]):
         self.weather_data = weather_data
 
-    def calculate_city_weather(self, city: str, data: dict[str, any]) -> tuple[float, int]:
+    def calculate_city_weather(self, city: str, data: dict[str, any]) -> tuple[float, int, float]:
         total_temp = 0
         hours_count = 0
         no_precipitation_hours = 0
+        daily_temps = []
 
         for forecast in data.get("forecasts", []):
+            daily_temp = 0
+            daily_hours_count = 0
             for hour in forecast.get("hours", []):
                 if 9 <= int(hour["hour"]) <= 19:
                     hours_count += 1
                     total_temp += hour["temp"]
+                    daily_temp += hour["temp"]
+                    daily_hours_count += 1
                     if hour["condition"] in ["clear", "partly-cloudy", "cloudy"]:
                         no_precipitation_hours += 1
+            if daily_hours_count > 0:
+                daily_temps.append(daily_temp / daily_hours_count)
 
-        if hours_count == 0:
-            avg_temp = 0
-        else:
-            avg_temp = total_temp / hours_count
+        avg_temp = total_temp / hours_count if hours_count else 0
+        avg_daily_temp = sum(daily_temps) / len(daily_temps) if daily_temps else 0
 
-        logger.debug(f"Calculated weather for {city}: avg_temp={avg_temp}, no_precipitation_hours={no_precipitation_hours}")
-        return avg_temp, no_precipitation_hours
+        logger.debug(f"Calculated weather for {city}: avg_temp={avg_temp}, no_precipitation_hours={no_precipitation_hours}, avg_daily_temp={avg_daily_temp}")
+        return avg_temp, no_precipitation_hours, avg_daily_temp
 
-    def run(self) -> dict[str, tuple[float, int]]:
+    def run(self) -> dict[str, tuple[float, int, float]]:
         with ProcessPoolExecutor() as executor:
             future_to_city = {executor.submit(self.calculate_city_weather, city, data): city for city, data in self.weather_data.items()}
             city_weather = {}
@@ -78,17 +81,18 @@ class DataCalculationTask:
 
 
 class DataAggregationTask:
-    def __init__(self, city_weather: dict[str, tuple[float, int]]):
+    def __init__(self, city_weather: dict[str, tuple[float, int, float]]):
         self.city_weather = city_weather
 
     def run(self) -> list[dict[str, any]]:
         aggregated_data = []
         for city, data in self.city_weather.items():
-            avg_temp, no_precipitation_hours = data
+            avg_temp, no_precipitation_hours, avg_daily_temp = data
             aggregated_data.append({
                 "city": city,
                 "avg_temp": avg_temp,
-                "no_precipitation_hours": no_precipitation_hours
+                "no_precipitation_hours": no_precipitation_hours,
+                "avg_daily_temp": avg_daily_temp
             })
         logger.debug(f"Aggregated data: {aggregated_data}")
         return aggregated_data
@@ -99,21 +103,17 @@ class DataAnalyzingTask:
         self.aggregated_data = aggregated_data
 
     def run(self) -> list[dict[str, any]]:
-        max_temp = max(self.aggregated_data, key=lambda x: x["avg_temp"])["avg_temp"]
-        max_no_precipitation_hours = max(self.aggregated_data, key=lambda x: x["no_precipitation_hours"])["no_precipitation_hours"]
+        sorted_by_temp = sorted(self.aggregated_data, key=lambda x: x["avg_temp"], reverse=True)
+        sorted_by_precipitation = sorted(self.aggregated_data, key=lambda x: x["no_precipitation_hours"], reverse=True)
 
-        best_cities = [city for city in self.aggregated_data if
-                       city["avg_temp"] == max_temp and city["no_precipitation_hours"] == max_no_precipitation_hours]
+        for rank, city in enumerate(sorted_by_temp):
+            city["temp_rank"] = rank + 1
+        for rank, city in enumerate(sorted_by_precipitation):
+            city["precipitation_rank"] = rank + 1
 
-        if not best_cities:
-            # Find cities with max avg_temp and max no_precipitation_hours separately
-            cities_with_max_temp = [city for city in self.aggregated_data if city["avg_temp"] == max_temp]
-            cities_with_max_no_precipitation_hours = [city for city in self.aggregated_data if city["no_precipitation_hours"] == max_no_precipitation_hours]
-
-            logger.debug(f"Cities with max temp: {cities_with_max_temp}")
-            logger.debug(f"Cities with max no precipitation hours: {cities_with_max_no_precipitation_hours}")
-
-            best_cities = cities_with_max_temp + cities_with_max_no_precipitation_hours
+        best_cities = sorted(self.aggregated_data, key=lambda x: (x["temp_rank"], x["precipitation_rank"]))
+        for rank, city in enumerate(best_cities):
+            city["overall_rank"] = rank + 1
 
         logger.debug(f"Best cities: {best_cities}")
         return best_cities

@@ -19,6 +19,7 @@ def main():
     data_analyzing_task = DataAnalyzingTask(aggregated_data)
     best_cities = data_analyzing_task.run()
 
+    save_to_json(aggregated_data, "aggregated_data.json")
     save_to_json(best_cities, "best_cities.json")
 
     print("Analysis complete. Best cities data saved to best_cities.json")
