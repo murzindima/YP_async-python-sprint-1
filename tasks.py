@@ -5,7 +5,6 @@ from utils import get_url_by_city_name
 
 logger = logging.getLogger(__name__)
 
-
 class DataFetchingTask:
     def __init__(self, cities: dict[str, str]):
         self.cities = cities
@@ -14,10 +13,10 @@ class DataFetchingTask:
         url = get_url_by_city_name(city)
         try:
             data = YandexWeatherAPI.get_forecasting(url)
-            logger.debug(f"Fetched data for {city}: {data}")
+            #logger.debug(f"Fetched data for {city}: {data}")
             return data
         except Exception as e:
-            logging.error(f"Error fetching data for {city}: {e}")
+            logger.error(f"Error fetching data for {city}: {e}")
             return {}
 
     def run(self) -> dict[str, dict[str, any]]:
@@ -31,10 +30,9 @@ class DataFetchingTask:
                     if data:
                         weather_data[city] = data
                 except Exception as e:
-                    logging.error(f"Error processing data for {city}: {e}")
-        logger.debug(f"Weather data fetched: {weather_data}")
+                    logger.error(f"Error processing data for {city}: {e}")
+        #logger.debug(f"Weather data fetched: {weather_data}")
         return weather_data
-
 
 class DataCalculationTask:
     def __init__(self, weather_data: dict[str, dict[str, any]]):
@@ -82,8 +80,7 @@ class DataCalculationTask:
 
     def run(self) -> dict[str, dict]:
         with ProcessPoolExecutor() as executor:
-            future_to_city = {executor.submit(self.calculate_city_weather, city, data): city for city, data in
-                              self.weather_data.items()}
+            future_to_city = {executor.submit(self.calculate_city_weather, city, data): city for city, data in self.weather_data.items()}
             city_weather = {}
             for future in as_completed(future_to_city):
                 city = future_to_city[future]
@@ -93,7 +90,6 @@ class DataCalculationTask:
                     logging.error(f"Error calculating weather for {city}: {e}")
         logger.debug(f"City weather calculated: {city_weather}")
         return city_weather
-
 
 class DataAggregationTask:
     def __init__(self, city_weather: dict[str, dict]):
@@ -105,7 +101,6 @@ class DataAggregationTask:
             aggregated_data.append(data)
         logger.debug(f"Aggregated data: {aggregated_data}")
         return aggregated_data
-
 
 class DataAnalyzingTask:
     def __init__(self, aggregated_data: list[dict[str, any]]):
@@ -121,6 +116,7 @@ class DataAnalyzingTask:
             city["precipitation_rank"] = rank + 1
 
         best_cities = sorted(self.aggregated_data, key=lambda x: (x["temp_rank"], x["precipitation_rank"]))
+
         for rank, city in enumerate(best_cities):
             city["rank"] = rank + 1
 
