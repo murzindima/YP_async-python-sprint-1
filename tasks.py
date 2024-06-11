@@ -5,6 +5,7 @@ from utils import get_url_by_city_name
 
 logger = logging.getLogger(__name__)
 
+
 class DataFetchingTask:
     def __init__(self, cities: dict[str, str]):
         self.cities = cities
@@ -34,39 +35,55 @@ class DataFetchingTask:
         #logger.debug(f"Weather data fetched: {weather_data}")
         return weather_data
 
+
 class DataCalculationTask:
     def __init__(self, weather_data: dict[str, dict[str, any]]):
         self.weather_data = weather_data
 
-    def calculate_city_weather(self, city: str, data: dict[str, any]) -> tuple[int, int, int]:
+    def calculate_city_weather(self, city: str, data: dict[str, any]) -> dict:
         total_temp = 0
-        hours_count = 0
-        no_precipitation_hours = 0
-        daily_temps = []
+        total_hours_count = 0
+        total_no_precipitation_hours = 0
+        daily_data = []
 
         for forecast in data.get("forecasts", []):
             daily_temp = 0
             daily_hours_count = 0
+            daily_no_precipitation_hours = 0
             for hour in forecast.get("hours", []):
                 if 9 <= int(hour["hour"]) <= 19:
-                    hours_count += 1
-                    total_temp += hour["temp"]
-                    daily_temp += hour["temp"]
                     daily_hours_count += 1
+                    daily_temp += hour["temp"]
                     if hour["condition"] in ["clear", "partly-cloudy", "cloudy"]:
-                        no_precipitation_hours += 1
+                        daily_no_precipitation_hours += 1
+
             if daily_hours_count > 0:
-                daily_temps.append(daily_temp / daily_hours_count)
+                avg_daily_temp = daily_temp / daily_hours_count
+                daily_data.append({
+                    "date": forecast["date"],
+                    "avg_temp": int(avg_daily_temp),
+                    "no_precipitation_hours": daily_no_precipitation_hours
+                })
+                total_temp += daily_temp
+                total_hours_count += daily_hours_count
+                total_no_precipitation_hours += daily_no_precipitation_hours
 
-        avg_temp = int(total_temp / hours_count) if hours_count else 0
-        avg_daily_temp = int(sum(daily_temps) / len(daily_temps)) if daily_temps else 0
+        avg_temp = int(total_temp / total_hours_count) if total_hours_count else 0
 
-        logger.debug(f"Calculated weather for {city}: avg_temp={avg_temp}, no_precipitation_hours={no_precipitation_hours}, avg_daily_temp={avg_daily_temp}")
-        return avg_temp, no_precipitation_hours, avg_daily_temp
+        result = {
+            "city": city,
+            "daily_data": daily_data,
+            "avg_temp": avg_temp,
+            "no_precipitation_hours": total_no_precipitation_hours
+        }
 
-    def run(self) -> dict[str, tuple[int, int, int]]:
+        logger.debug(f"Calculated weather for {city}: {result}")
+        return result
+
+    def run(self) -> dict[str, dict]:
         with ProcessPoolExecutor() as executor:
-            future_to_city = {executor.submit(self.calculate_city_weather, city, data): city for city, data in self.weather_data.items()}
+            future_to_city = {executor.submit(self.calculate_city_weather, city, data): city for city, data in
+                              self.weather_data.items()}
             city_weather = {}
             for future in as_completed(future_to_city):
                 city = future_to_city[future]
@@ -77,22 +94,18 @@ class DataCalculationTask:
         logger.debug(f"City weather calculated: {city_weather}")
         return city_weather
 
+
 class DataAggregationTask:
-    def __init__(self, city_weather: dict[str, tuple[int, int, int]]):
+    def __init__(self, city_weather: dict[str, dict]):
         self.city_weather = city_weather
 
     def run(self) -> list[dict[str, any]]:
         aggregated_data = []
         for city, data in self.city_weather.items():
-            avg_temp, no_precipitation_hours, avg_daily_temp = data
-            aggregated_data.append({
-                "city": city,
-                "avg_temp": avg_temp,
-                "no_precipitation_hours": no_precipitation_hours,
-                "avg_daily_temp": avg_daily_temp
-            })
+            aggregated_data.append(data)
         logger.debug(f"Aggregated data: {aggregated_data}")
         return aggregated_data
+
 
 class DataAnalyzingTask:
     def __init__(self, aggregated_data: list[dict[str, any]]):
