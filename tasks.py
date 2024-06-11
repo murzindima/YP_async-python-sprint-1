@@ -113,19 +113,29 @@ class DataAnalyzingTask:
         self.aggregated_data = aggregated_data
 
     def run(self) -> list[dict[str, any]]:
-        max_temp = max(self.aggregated_data, key=lambda x: x["avg_temp"])["avg_temp"]
+        max_avg_temp = max(self.aggregated_data, key=lambda x: x["avg_temp"])["avg_temp"]
         max_no_precipitation_hours = max(self.aggregated_data, key=lambda x: x["no_precipitation_hours"])[
             "no_precipitation_hours"]
 
-        best_cities = [city for city in self.aggregated_data if
-                       city["avg_temp"] == max_temp and city["no_precipitation_hours"] == max_no_precipitation_hours]
+        best_cities = [
+            city for city in self.aggregated_data
+            if city["avg_temp"] == max_avg_temp and city["no_precipitation_hours"] == max_no_precipitation_hours
+        ]
+
+        if not best_cities:
+            # Handle case where no city meets both criteria, choose cities with highest avg_temp or max_no_precipitation_hours
+            cities_with_max_temp = [city for city in self.aggregated_data if city["avg_temp"] == max_avg_temp]
+            cities_with_max_no_precipitation = [city for city in self.aggregated_data if
+                                                city["no_precipitation_hours"] == max_no_precipitation_hours]
+            best_cities = cities_with_max_temp + cities_with_max_no_precipitation
 
         for rank, city in enumerate(best_cities):
             city["rank"] = rank + 1
 
-        for city in self.aggregated_data:
-            city.pop("temp_rank", None)
-            city.pop("precipitation_rank", None)
-
         logger.debug(f"Best cities: {best_cities}")
         return best_cities
+
+
+def save_to_json(data: list[dict[str, any]], filename: str):
+    with open(filename, 'w') as f:
+        json.dump(data, f, indent=4)
