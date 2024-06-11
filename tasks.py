@@ -14,7 +14,7 @@ class DataFetchingTask:
         url = get_url_by_city_name(city)
         try:
             data = YandexWeatherAPI.get_forecasting(url)
-            logger.debug(f"Fetched data for {city}: {data}")
+            #logger.debug(f"Fetched data for {city}: {data}")
             return data
         except Exception as e:
             logging.error(f"Error fetching data for {city}: {e}")
@@ -32,7 +32,7 @@ class DataFetchingTask:
                         weather_data[city] = data
                 except Exception as e:
                     logging.error(f"Error processing data for {city}: {e}")
-        logger.debug(f"Weather data fetched: {weather_data}")
+        #logger.debug(f"Weather data fetched: {weather_data}")
         return weather_data
 
 
@@ -54,7 +54,7 @@ class DataCalculationTask:
                 if 9 <= int(hour["hour"]) <= 19:
                     daily_hours_count += 1
                     daily_temp += hour["temp"]
-                    if hour["condition"] in ["clear", "partly-cloudy", "cloudy"]:
+                    if hour["condition"] in ["clear", "partly-cloudy", "cloudy", "overcast"]:
                         daily_no_precipitation_hours += 1
 
             if daily_hours_count > 0:
@@ -113,19 +113,37 @@ class DataAnalyzingTask:
         self.aggregated_data = aggregated_data
 
     def run(self) -> list[dict[str, any]]:
+        for city in self.aggregated_data:
+            logger.debug(f"City data: {city}")
+
         max_avg_temp = max(self.aggregated_data, key=lambda x: x["avg_temp"])["avg_temp"]
         max_no_precipitation_hours = max(self.aggregated_data, key=lambda x: x["no_precipitation_hours"])[
             "no_precipitation_hours"]
+
+        logger.debug(f"Max avg temp: {max_avg_temp}")
+        logger.debug(f"Max no precipitation hours: {max_no_precipitation_hours}")
 
         best_cities = [
             city for city in self.aggregated_data
             if city["avg_temp"] == max_avg_temp and city["no_precipitation_hours"] == max_no_precipitation_hours
         ]
 
+        logger.debug(f"Initial best cities: {best_cities}")
+
+        if not best_cities:
+            cities_with_max_temp = [city for city in self.aggregated_data if city["avg_temp"] == max_avg_temp]
+            cities_with_max_no_precipitation = [city for city in self.aggregated_data if
+                                                city["no_precipitation_hours"] == max_no_precipitation_hours]
+            best_cities = cities_with_max_temp + [city for city in cities_with_max_no_precipitation if
+                                                  city not in cities_with_max_temp]
+
         for rank, city in enumerate(best_cities):
             city["rank"] = rank + 1
 
-        logger.debug(f"Best cities: {best_cities}")
+        logger.debug(f"Best cities after rank: {best_cities}")
         return best_cities
 
 
+def save_to_json(data: list[dict[str, any]], filename: str):
+    with open(filename, 'w') as f:
+        json.dump(data, f, indent=4)
