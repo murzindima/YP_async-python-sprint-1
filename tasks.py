@@ -14,7 +14,7 @@ class DataFetchingTask:
         url = get_url_by_city_name(city)
         try:
             data = YandexWeatherAPI.get_forecasting(url)
-            #logger.debug(f"Fetched data for {city}: {data}")
+            logger.debug(f"Fetched data for {city}: {data}")
             return data
         except Exception as e:
             logging.error(f"Error fetching data for {city}: {e}")
@@ -32,7 +32,7 @@ class DataFetchingTask:
                         weather_data[city] = data
                 except Exception as e:
                     logging.error(f"Error processing data for {city}: {e}")
-        #logger.debug(f"Weather data fetched: {weather_data}")
+        logger.debug(f"Weather data fetched: {weather_data}")
         return weather_data
 
 
@@ -69,12 +69,13 @@ class DataCalculationTask:
                 total_no_precipitation_hours += daily_no_precipitation_hours
 
         avg_temp = int(total_temp / total_hours_count) if total_hours_count else 0
+        avg_no_precipitation_hours = int(total_no_precipitation_hours / len(daily_data)) if daily_data else 0
 
         result = {
             "city": city,
             "daily_data": daily_data,
             "avg_temp": avg_temp,
-            "no_precipitation_hours": total_no_precipitation_hours
+            "no_precipitation_hours": avg_no_precipitation_hours
         }
 
         logger.debug(f"Calculated weather for {city}: {result}")
@@ -132,3 +133,4 @@ class DataAnalyzingTask:
 
         logger.debug(f"Best cities: {best_cities}")
         return best_cities
+

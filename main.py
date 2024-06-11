@@ -31,7 +31,10 @@ def main():
             print(f"City: {city['city']}")
             print(f"Average Temperature: {city['avg_temp']}°C")
             print(f"No Precipitation Hours: {city['no_precipitation_hours']} hours")
-            #print(f"Average Daily Temperature: {city['avg_daily_temp']}°C")
+            print(f"Rank: {city['rank']}")
+            for daily in city['daily_data']:
+                print(f"Date: {daily['date']}, Average Temperature: {daily['avg_temp']}°C, No Precipitation Hours: {daily['no_precipitation_hours']} hours")
+            print("\n")
 
 if __name__ == '__main__':
     main()
