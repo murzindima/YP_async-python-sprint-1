@@ -1,3 +1,5 @@
+import json
+
 CITIES = {
     "MOSCOW": "https://code.s3.yandex.net/async-module/moscow-response.json",
     "PARIS": "https://code.s3.yandex.net/async-module/paris-response.json",
@@ -43,3 +45,8 @@ def get_url_by_city_name(city_name):
         return CITIES[city_name]
     except KeyError:
         raise Exception("Please check that city {} exists".format(city_name))
+
+
+def save_to_json(data: list[dict[str, any]], filename: str):
+    with open(filename, 'w') as f:
+        json.dump(data, f, indent=4)
