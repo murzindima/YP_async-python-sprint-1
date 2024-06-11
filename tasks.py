@@ -5,7 +5,6 @@ from utils import get_url_by_city_name
 
 logger = logging.getLogger(__name__)
 
-
 class DataFetchingTask:
     def __init__(self, cities: dict[str, str]):
         self.cities = cities
@@ -14,7 +13,7 @@ class DataFetchingTask:
         url = get_url_by_city_name(city)
         try:
             data = YandexWeatherAPI.get_forecasting(url)
-            logger.debug(f"Fetched data for {city}: {data}")
+            # logger.debug(f"Fetched data for {city}: {data}")
             return data
         except Exception as e:
             logging.error(f"Error fetching data for {city}: {e}")
@@ -32,9 +31,8 @@ class DataFetchingTask:
                         weather_data[city] = data
                 except Exception as e:
                     logging.error(f"Error processing data for {city}: {e}")
-        logger.debug(f"Weather data fetched: {weather_data}")
+        #logger.debug(f"Weather data fetched: {weather_data}")
         return weather_data
-
 
 class DataCalculationTask:
     def __init__(self, weather_data: dict[str, dict[str, any]]):
@@ -79,7 +77,6 @@ class DataCalculationTask:
         logger.debug(f"City weather calculated: {city_weather}")
         return city_weather
 
-
 class DataAggregationTask:
     def __init__(self, city_weather: dict[str, tuple[float, int, float]]):
         self.city_weather = city_weather
@@ -96,7 +93,6 @@ class DataAggregationTask:
             })
         logger.debug(f"Aggregated data: {aggregated_data}")
         return aggregated_data
-
 
 class DataAnalyzingTask:
     def __init__(self, aggregated_data: list[dict[str, any]]):
