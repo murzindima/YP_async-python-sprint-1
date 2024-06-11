@@ -31,14 +31,14 @@ class DataFetchingTask:
                         weather_data[city] = data
                 except Exception as e:
                     logging.error(f"Error processing data for {city}: {e}")
-        #logger.debug(f"Weather data fetched: {weather_data}")
+        # logger.debug(f"Weather data fetched: {weather_data}")
         return weather_data
 
 class DataCalculationTask:
     def __init__(self, weather_data: dict[str, dict[str, any]]):
         self.weather_data = weather_data
 
-    def calculate_city_weather(self, city: str, data: dict[str, any]) -> tuple[float, int, float]:
+    def calculate_city_weather(self, city: str, data: dict[str, any]) -> tuple[int, int, int]:
         total_temp = 0
         hours_count = 0
         no_precipitation_hours = 0
@@ -58,13 +58,13 @@ class DataCalculationTask:
             if daily_hours_count > 0:
                 daily_temps.append(daily_temp / daily_hours_count)
 
-        avg_temp = total_temp / hours_count if hours_count else 0
-        avg_daily_temp = sum(daily_temps) / len(daily_temps) if daily_temps else 0
+        avg_temp = int(total_temp / hours_count) if hours_count else 0
+        avg_daily_temp = int(sum(daily_temps) / len(daily_temps)) if daily_temps else 0
 
         logger.debug(f"Calculated weather for {city}: avg_temp={avg_temp}, no_precipitation_hours={no_precipitation_hours}, avg_daily_temp={avg_daily_temp}")
         return avg_temp, no_precipitation_hours, avg_daily_temp
 
-    def run(self) -> dict[str, tuple[float, int, float]]:
+    def run(self) -> dict[str, tuple[int, int, int]]:
         with ProcessPoolExecutor() as executor:
             future_to_city = {executor.submit(self.calculate_city_weather, city, data): city for city, data in self.weather_data.items()}
             city_weather = {}
@@ -78,7 +78,7 @@ class DataCalculationTask:
         return city_weather
 
 class DataAggregationTask:
-    def __init__(self, city_weather: dict[str, tuple[float, int, float]]):
+    def __init__(self, city_weather: dict[str, tuple[int, int, int]]):
         self.city_weather = city_weather
 
     def run(self) -> list[dict[str, any]]:
@@ -109,7 +109,9 @@ class DataAnalyzingTask:
 
         best_cities = sorted(self.aggregated_data, key=lambda x: (x["temp_rank"], x["precipitation_rank"]))
         for rank, city in enumerate(best_cities):
-            city["overall_rank"] = rank + 1
+            city["rank"] = rank + 1
+
+        best_cities = [city for city in best_cities if city["rank"] == 1]
 
         logger.debug(f"Best cities: {best_cities}")
         return best_cities
