@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "async-python-sprint-1"
+version = "0.1.0"
+description = ""
+authors = ["Dmitry Murzin <dmitry@murzin.life>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+requests = "^2.32.3"
+
+[tool.poetry.dev-dependencies]
+pytest = "^8.2.2"
+pytest-mock = "^3.14.0"
+black = "^24.4.2"
+ruff = "^0.4.8"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

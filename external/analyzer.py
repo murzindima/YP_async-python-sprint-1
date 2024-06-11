@@ -134,9 +134,11 @@ class DayInfo:
             "hours_start": self.hour_start,
             "hours_end": self.hour_end,
             "hours_count": self.hours_count,
-            "temp_avg": round(self.temperature_avg, 3)
-            if self.temperature_avg
-            else self.temperature_avg,
+            "temp_avg": (
+                round(self.temperature_avg, 3)
+                if self.temperature_avg
+                else self.temperature_avg
+            ),
             "relevant_cond_hours": self.relevant_condition_hours,
         }
 
@@ -182,7 +184,7 @@ def analyze_json(data):
 
     # analyzing days
     time_start = None
-    time_end = None
+    # time_end = None
 
     days_data = deep_getitem(data, INPUT_FORECAST_PATH)
     days = []
@@ -192,7 +194,7 @@ def analyze_json(data):
         d_date = d_info.date
 
         time_start = time_start or d_date
-        time_end = d_date
+        # time_end = d_date
 
         days.append(d_info.to_json())
 
