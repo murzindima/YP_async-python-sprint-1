@@ -24,5 +24,14 @@ def main():
     print("Analysis complete. Best cities data saved to best_cities.json")
     print("Aggregated data saved to aggregated_data.json")
 
+    # Вывод информации о лучшем городе в консоль
+    if best_cities:
+        print("\nBest city for travel:")
+        for city in best_cities:
+            print(f"City: {city['city']}")
+            print(f"Average Temperature: {city['avg_temp']}°C")
+            print(f"No Precipitation Hours: {city['no_precipitation_hours']} hours")
+            print(f"Average Daily Temperature: {city['avg_daily_temp']}°C")
+
 if __name__ == '__main__':
     main()
