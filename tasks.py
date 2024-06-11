@@ -1,5 +1,7 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
+
+from external.analyzer import INPUT_DAY_SUITABLE_CONDITIONS
 from external.client import YandexWeatherAPI
 from utils import get_url_by_city_name
 
@@ -59,12 +61,7 @@ class DataCalculationTask:
                 if 9 <= int(hour["hour"]) <= 19:
                     daily_hours_count += 1
                     daily_temp += hour["temp"]
-                    if hour["condition"] in [
-                        "clear",
-                        "partly-cloudy",
-                        "cloudy",
-                        "overcast",
-                    ]:
+                    if hour["condition"] in INPUT_DAY_SUITABLE_CONDITIONS:
                         daily_no_precipitation_hours += 1
 
             if daily_hours_count > 0:
