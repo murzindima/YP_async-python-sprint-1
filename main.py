@@ -29,7 +29,7 @@ def main():
         for city in best_cities:
             print(f"City: {city['city']}")
             print(f"Average Temperature: {city['avg_temp']}°C")
-            print(f"No Precipitation Hours: {city['total_no_precipitation_hours']} hours")
+            print(f"No Precipitation Hours: {city['no_precipitation_hours']} hours")
             print(f"Rank: {city['rank']}")
             for daily in city['daily_data']:
                 print(f"Date: {daily['date']}, Average Temperature: {daily['avg_temp']}°C, No Precipitation Hours: {daily['no_precipitation_hours']} hours")

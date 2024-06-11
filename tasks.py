@@ -14,7 +14,7 @@ class DataFetchingTask:
         url = get_url_by_city_name(city)
         try:
             data = YandexWeatherAPI.get_forecasting(url)
-            #logger.debug(f"Fetched data for {city}: {data}")
+            logger.debug(f"Fetched data for {city}: {data}")
             return data
         except Exception as e:
             logging.error(f"Error fetching data for {city}: {e}")
@@ -32,7 +32,7 @@ class DataFetchingTask:
                         weather_data[city] = data
                 except Exception as e:
                     logging.error(f"Error processing data for {city}: {e}")
-        #logger.debug(f"Weather data fetched: {weather_data}")
+        logger.debug(f"Weather data fetched: {weather_data}")
         return weather_data
 
 
@@ -74,7 +74,7 @@ class DataCalculationTask:
             "city": city,
             "daily_data": daily_data,
             "avg_temp": avg_temp,
-            "total_no_precipitation_hours": total_no_precipitation_hours
+            "no_precipitation_hours": total_no_precipitation_hours
         }
 
         logger.debug(f"Calculated weather for {city}: {result}")
@@ -112,25 +112,23 @@ class DataAnalyzingTask:
         self.aggregated_data = aggregated_data
 
     def run(self) -> list[dict[str, any]]:
-        for city in self.aggregated_data:
-            logger.debug(f"City data: {city}")
+        sorted_by_temp = sorted(self.aggregated_data, key=lambda x: x["avg_temp"], reverse=True)
+        sorted_by_precipitation = sorted(self.aggregated_data, key=lambda x: x["no_precipitation_hours"], reverse=True)
 
-        max_avg_temp = max(self.aggregated_data, key=lambda x: x["avg_temp"])["avg_temp"]
-        max_no_precipitation_hours = max(self.aggregated_data, key=lambda x: x["total_no_precipitation_hours"])[
-            "total_no_precipitation_hours"]
+        for rank, city in enumerate(sorted_by_temp):
+            city["temp_rank"] = rank + 1
+        for rank, city in enumerate(sorted_by_precipitation):
+            city["precipitation_rank"] = rank + 1
 
-        logger.debug(f"Max avg temp: {max_avg_temp}")
-        logger.debug(f"Max total no precipitation hours: {max_no_precipitation_hours}")
-
-        best_cities = [
-            city for city in self.aggregated_data
-            if city["avg_temp"] == max_avg_temp and city["total_no_precipitation_hours"] == max_no_precipitation_hours
-        ]
-
-        logger.debug(f"Initial best cities: {best_cities}")
-
+        best_cities = sorted(self.aggregated_data, key=lambda x: (x["temp_rank"], x["precipitation_rank"]))
         for rank, city in enumerate(best_cities):
             city["rank"] = rank + 1
 
-        logger.debug(f"Best cities after rank: {best_cities}")
+        best_cities = [city for city in best_cities if city["rank"] == 1]
+
+        for city in self.aggregated_data:
+            city.pop("temp_rank", None)
+            city.pop("precipitation_rank", None)
+
+        logger.debug(f"Best cities: {best_cities}")
         return best_cities
