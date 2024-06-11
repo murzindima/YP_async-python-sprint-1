@@ -11,7 +11,7 @@ def city_weather():
             "no_precipitation_hours": 2,
             "daily_data": [
                 {"date": "2022-05-26", "avg_temp": 21, "no_precipitation_hours": 2}
-            ]
+            ],
         }
     }
 

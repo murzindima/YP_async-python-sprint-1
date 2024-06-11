@@ -5,6 +5,7 @@
 
 
 from external.client import YandexWeatherAPI
+
 # from tasks import (
 #     DataFetchingTask,
 #     DataCalculationTask,

@@ -6,7 +6,7 @@ from tasks import DataFetchingTask
 def cities():
     return {
         "MOSCOW": "https://code.s3.yandex.net/async-module/moscow-response.json",
-        "PARIS": "https://code.s3.yandex.net/async-module/paris-response.json"
+        "PARIS": "https://code.s3.yandex.net/async-module/paris-response.json",
     }
 
 
@@ -18,12 +18,14 @@ def test_fetch_weather_data_success(mocker, cities):
                 "hours": [
                     {"hour": "10", "temp": 20, "condition": "clear"},
                     {"hour": "11", "temp": 22, "condition": "cloudy"},
-                ]
+                ],
             }
         ]
     }
 
-    mocker.patch('external.client.YandexWeatherAPI.get_forecasting', return_value=mock_response)
+    mocker.patch(
+        "external.client.YandexWeatherAPI.get_forecasting", return_value=mock_response
+    )
 
     task = DataFetchingTask(cities)
     result = task.run()

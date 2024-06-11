@@ -13,6 +13,7 @@ class YandexWeatherAPI:
     """
     Base class for requests
     """
+
     @staticmethod
     def __do_req(url: str) -> str:
         """Base request method"""

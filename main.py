@@ -1,8 +1,15 @@
 import logging
-from tasks import DataFetchingTask, DataCalculationTask, DataAggregationTask, DataAnalyzingTask
+from tasks import (
+    DataFetchingTask,
+    DataCalculationTask,
+    DataAggregationTask,
+    DataAnalyzingTask,
+)
 from utils import CITIES, save_to_json
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger()
 
 
@@ -32,10 +39,12 @@ def main():
             print(f"Average Temperature: {city['avg_temp']}°C")
             print(f"No Precipitation Hours: {city['no_precipitation_hours']} hours")
             print(f"Rank: {city['rank']}")
-            for daily in city['daily_data']:
-                print(f"Date: {daily['date']}, Average Temperature: {daily['avg_temp']}°C, No Precipitation Hours: {daily['no_precipitation_hours']} hours")
+            for daily in city["daily_data"]:
+                print(
+                    f"Date: {daily['date']}, Average Temperature: {daily['avg_temp']}°C, No Precipitation Hours: {daily['no_precipitation_hours']} hours"
+                )
             print("\n")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

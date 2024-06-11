@@ -12,8 +12,8 @@ def weather_data():
                     "hours": [
                         {"hour": "10", "temp": 20, "condition": "clear"},
                         {"hour": "11", "temp": 22, "condition": "cloudy"},
-                        {"hour": "12", "temp": 21, "condition": "rain"}
-                    ]
+                        {"hour": "12", "temp": 21, "condition": "rain"},
+                    ],
                 }
             ]
         }

@@ -9,6 +9,10 @@ readme = "README.md"
 python = "^3.12"
 requests = "^2.32.3"
 
+[tool.poetry.dev-dependencies]
+pytest = "^8.2.2"
+black = "^24.4.2"
+ruff = "^0.4.8"
 
 [build-system]
 requires = ["poetry-core"]
