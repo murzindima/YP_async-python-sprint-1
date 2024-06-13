@@ -1,5 +1,6 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
+from typing import Any
 
 from external.analyzer import INPUT_DAY_SUITABLE_CONDITIONS
 from external.client import YandexWeatherAPI
@@ -13,7 +14,7 @@ class DataFetchingTask:
         self.cities = cities
 
     @staticmethod
-    def fetch_weather_data(city: str) -> dict[str, any]:
+    def fetch_weather_data(city: str) -> dict[str, Any]:
         url = get_url_by_city_name(city)
         try:
             data = YandexWeatherAPI.get_forecasting(url)
@@ -23,7 +24,7 @@ class DataFetchingTask:
             logger.error(f"Error fetching data for {city}: {e}")
             return {}
 
-    def run(self) -> dict[str, dict[str, any]]:
+    def run(self) -> dict[str, dict[str, Any]]:
         with ThreadPoolExecutor() as executor:
             future_to_city = {
                 executor.submit(self.fetch_weather_data, city): city
@@ -43,11 +44,11 @@ class DataFetchingTask:
 
 
 class DataCalculationTask:
-    def __init__(self, weather_data: dict[str, dict[str, any]]):
+    def __init__(self, weather_data: dict[str, dict[str, Any]]):
         self.weather_data = weather_data
 
     @staticmethod
-    def calculate_city_weather(city: str, data: dict[str, any]) -> dict:
+    def calculate_city_weather(city: str, data: dict[str, Any]) -> dict:
         total_temp = 0
         total_hours_count = 0
         total_no_precipitation_hours = 0
@@ -110,7 +111,7 @@ class DataAggregationTask:
     def __init__(self, city_weather: dict[str, dict]):
         self.city_weather = city_weather
 
-    def run(self) -> list[dict[str, any]]:
+    def run(self) -> list[dict[str, Any]]:
         aggregated_data = []
         for city, data in self.city_weather.items():
             aggregated_data.append(data)
@@ -119,10 +120,10 @@ class DataAggregationTask:
 
 
 class DataAnalyzingTask:
-    def __init__(self, aggregated_data: list[dict[str, any]]):
+    def __init__(self, aggregated_data: list[dict[str, Any]]):
         self.aggregated_data = aggregated_data
 
-    def run(self) -> list[dict[str, any]]:
+    def run(self) -> list[dict[str, Any]]:
         sorted_by_temp = sorted(
             self.aggregated_data, key=lambda x: x["avg_temp"], reverse=True
         )
