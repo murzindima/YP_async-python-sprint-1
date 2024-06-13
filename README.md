@@ -1,3 +1,62 @@
+# Комментарии для ревьюера
+
+Здравствуйте, Владислав. Спасибо за ревью!
+
+## Про Any
+
+Исправил.
+
+## Про ошибку при запуске тестов 
+
+Я использую poetry и эта зависимость в файле pyproject.toml
+
+```toml
+[tool.poetry.dev-dependencies]
+pytest = "^8.2.2"
+pytest-mock = "^3.14.0"
+```
+этот пакет -- pytest-mock = "^3.14.0"
+
+```shell
+$ poetry show
+black              24.4.2   The uncompromising code formatter.
+certifi            2024.6.2 Python package for providing Mozilla's CA Bundle.
+charset-normalizer 3.3.2    The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet.
+click              8.1.7    Composable command line interface toolkit
+idna               3.7      Internationalized Domain Names in Applications (IDNA)
+iniconfig          2.0.0    brain-dead simple config-ini parsing
+mypy-extensions    1.0.0    Type system extensions for programs checked with the mypy type checker.
+packaging          24.1     Core utilities for Python packages
+pathspec           0.12.1   Utility library for gitignore style pattern matching of file paths.
+platformdirs       4.2.2    A small Python package for determining appropriate platform-specific dirs, e.g. a `user data dir`.
+pluggy             1.5.0    plugin and hook calling mechanisms for python
+pytest             8.2.2    pytest: simple powerful testing with Python
+pytest-mock        3.14.0   Thin-wrapper around the mock package for easier use with pytest
+requests           2.32.3   Python HTTP for Humans.
+ruff               0.4.8    An extremely fast Python linter and code formatter, written in Rust.
+urllib3            2.2.1    HTTP library with thread-safe connection pooling, file post, and more.
+
+$ pytest
+=== test session starts ==
+platform darwin -- Python 3.12.3, pytest-8.2.2, pluggy-1.5.0
+rootdir: /...........
+configfile: pyproject.toml
+plugins: mock-3.14.0
+collected 4 items
+
+tests/test_data_aggregation.py .                                                                                                                                                                     [ 25%]
+tests/test_data_analyzing.py .                                                                                                                                                                       [ 50%]
+tests/test_data_calculation.py .                                                                                                                                                                     [ 75%]
+tests/test_data_fetching.py .                                                                                                                                                                        [100%]
+
+== 4 passed in 0.02s =====
+```
+
+## Про очереди
+
+
+
+
 # Проектное задание первого спринта
 
 Ваша задача — проанализировать данные по погодным условиям, полученные от API Яндекс Погоды.

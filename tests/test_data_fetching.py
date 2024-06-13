@@ -10,6 +10,11 @@ def cities():
     }
 
 
+# Комментарий для ревьюера:
+# использую poetry и эта зависимость в файле pyproject.toml
+# [tool.poetry.dev-dependencies]
+# pytest = "^8.2.2"
+# pytest-mock = "^3.14.0" -- вот этот пакет
 def test_fetch_weather_data_success(mocker, cities):
     mock_response = {
         "forecasts": [
