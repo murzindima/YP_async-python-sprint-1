@@ -1,6 +1,7 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
 from typing import Any
+from queue import Queue
 
 from external.analyzer import INPUT_DAY_SUITABLE_CONDITIONS
 from external.client import YandexWeatherAPI
@@ -10,8 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 class DataFetchingTask:
-    def __init__(self, cities: dict[str, str]):
+    def __init__(self, cities: dict[str, str], output_queue: Queue):
         self.cities = cities
+        self.output_queue = output_queue
 
     @staticmethod
     def fetch_weather_data(city: str) -> dict[str, Any]:
@@ -19,33 +21,27 @@ class DataFetchingTask:
         try:
             data = YandexWeatherAPI.get_forecasting(url)
             logger.debug(f"Fetched data for {city}: {data}")
-            return data
+            return {city: data}
         except Exception as e:
             logger.error(f"Error fetching data for {city}: {e}")
-            return {}
+            return {city: {}}
 
-    def run(self) -> dict[str, dict[str, Any]]:
+    def run(self) -> None:
         with ThreadPoolExecutor() as executor:
             future_to_city = {
                 executor.submit(self.fetch_weather_data, city): city
                 for city in self.cities.keys()
             }
-            weather_data = {}
             for future in as_completed(future_to_city):
-                city = future_to_city[future]
-                try:
-                    data = future.result()
-                    if data:
-                        weather_data[city] = data
-                except Exception as e:
-                    logger.error(f"Error processing data for {city}: {e}")
-        logger.debug(f"Weather data fetched: {weather_data}")
-        return weather_data
+                city_data = future.result()
+                self.output_queue.put(city_data)
+        logger.debug("All data fetched and put in the queue.")
 
 
 class DataCalculationTask:
-    def __init__(self, weather_data: dict[str, dict[str, Any]]):
-        self.weather_data = weather_data
+    def __init__(self, input_queue: Queue, output_queue: Queue):
+        self.input_queue = input_queue
+        self.output_queue = output_queue
 
     @staticmethod
     def calculate_city_weather(city: str, data: dict[str, Any]) -> dict:
@@ -90,30 +86,35 @@ class DataCalculationTask:
         logger.debug(f"Calculated weather for {city}: {result}")
         return result
 
-    def run(self) -> dict[str, dict]:
+    def run(self) -> None:
         with ProcessPoolExecutor() as executor:
-            future_to_city = {
-                executor.submit(self.calculate_city_weather, city, data): city
-                for city, data in self.weather_data.items()
-            }
-            city_weather = {}
+            future_to_city = {}
+            while True:
+                city_data = self.input_queue.get()
+                if city_data is None:
+                    break
+                for city, data in city_data.items():
+                    if data:
+                        future = executor.submit(self.calculate_city_weather, city, data)
+                        future_to_city[future] = city
+
             for future in as_completed(future_to_city):
                 city = future_to_city[future]
                 try:
-                    city_weather[city] = future.result()
+                    result = future.result()
+                    self.output_queue.put(result)
                 except Exception as e:
                     logging.error(f"Error calculating weather for {city}: {e}")
-        logger.debug(f"City weather calculated: {city_weather}")
-        return city_weather
+        logger.debug("All data calculated and put in the queue.")
 
 
 class DataAggregationTask:
-    def __init__(self, city_weather: dict[str, dict]):
+    def __init__(self, city_weather: list[dict]):
         self.city_weather = city_weather
 
     def run(self) -> list[dict[str, Any]]:
         aggregated_data = []
-        for city, data in self.city_weather.items():
+        for data in self.city_weather:
             aggregated_data.append(data)
         logger.debug(f"Aggregated data: {aggregated_data}")
         return aggregated_data

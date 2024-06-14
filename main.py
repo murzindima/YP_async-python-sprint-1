@@ -6,6 +6,8 @@ from tasks import (
     DataAnalyzingTask,
 )
 from utils import CITIES, save_to_json
+from queue import Queue
+from threading import Thread
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -14,13 +16,24 @@ logger = logging.getLogger()
 
 
 def main():
-    data_fetching_task = DataFetchingTask(CITIES)
-    weather_data = data_fetching_task.run()
+    weather_data_queue = Queue()  # для передачи данных о погоде между fetching и calculation
+    results_queue = Queue()  # для передачи результатов вычислений между calculation и aggregation
 
-    data_calculation_task = DataCalculationTask(weather_data)
-    city_weather = data_calculation_task.run()
+    data_fetching_task = DataFetchingTask(CITIES, weather_data_queue)
+    data_calculation_task = DataCalculationTask(weather_data_queue, results_queue)
 
-    data_aggregation_task = DataAggregationTask(city_weather)
+    fetching_thread = Thread(target=data_fetching_task.run)
+    fetching_thread.start()
+
+    calculation_thread = Thread(target=data_calculation_task.run)
+    calculation_thread.start()
+
+    fetching_thread.join()
+    weather_data_queue.put(None)  # нужно чтобы DataCalculationTask знал, что больше данных не поступит, и он может завершить свою работу
+    calculation_thread.join()
+
+    aggregated_data = list(results_queue.queue)
+    data_aggregation_task = DataAggregationTask(aggregated_data)
     aggregated_data = data_aggregation_task.run()
 
     data_analyzing_task = DataAnalyzingTask(aggregated_data)
